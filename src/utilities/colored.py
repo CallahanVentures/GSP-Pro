@@ -7,7 +7,7 @@ just_fix_windows_console()
 
 # Colored text lambda functions
 def print_blue(x: str):
-    print(colored(x, "blue"))
+    print(colored(x, "cyan"))
 
 
 def print_green(x: str):

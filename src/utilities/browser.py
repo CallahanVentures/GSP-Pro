@@ -152,7 +152,9 @@ def captcha_present(e) -> bool:
 
 def captcha_onload(driver) -> Union[str, bool]:
     try:
-        return "https://www.google.com/sorry/index?continue=" in driver.current_url
+        captcha_in_url: bool = "https://www.google.com/sorry/index?continue=" in driver.current_url
+        captcha_in_resp: bool = "This page appears when Google automatically detects requests coming" in render_html(driver)
+        return captcha_in_url or captcha_in_resp
     except Exception:
         return False
 
@@ -179,22 +181,26 @@ def captcha_missing(driver) -> bool:
         return False
 
 
-# FIX: Crashes the thread... It shouldn't do that, I think
-# Be alarmed now
-def swap_proxy(driver: webdriver.Chrome, PROXY_TYPE: ConfigProxyType = ConfigProxyType.HTTP, retries: int = 10) -> bool:
+
+def swap_proxy(driver: webdriver.Chrome, PROXY_TYPE: ConfigProxyType = ConfigProxyType.HTTP, retries: int = 10, current_url: str = None) -> Union[bool, webdriver.Chrome]:
     """
-    Swap the proxy of the WebDriver instance to the provided proxy string.
+    Generates a valid proxy of the defined PROXY_TYPE with the specified retry count.
 
     Parameters:
         driver (WebDriver): The Selenium WebDriver instance.
         retries (int): The number of retries to find a valid proxy.
 
     Returns:
-        bool(True) or bool(False) depending on status of proxy swap
+        [bool(True), new_driver] or [bool(False)] depending on status of proxy swap
     """
+
     attempts: int = 0
     proxy_manual = ProxyType.MANUAL
-    working_proxy = False
+    working_proxy: bool = False
+    if not current_url:
+        return False
+
+
     try:
         while not working_proxy and attempts < retries:
             attempts += 1
@@ -212,22 +218,25 @@ def swap_proxy(driver: webdriver.Chrome, PROXY_TYPE: ConfigProxyType = ConfigPro
 
             # Create a Proxy object
             proxy_obj = Proxy(proxy_dict)
+            driver.close()
 
-            # Set proxy for the WebDriver
-            driver.proxy = proxy_obj
-            driver.refresh()
-            time.sleep(5)
+            print_red(f"Starting a new browser instance with proxy: {proxy}")
+            new_driver = initialize_browser(use_proxy=True, proxy_type=PROXY_TYPE, user_agent=random_firefox_ua())
 
-            print_green(f"Proxy set to: {proxy}")
-            return True
-        return False
+            # Although new_driver's proxy should be set, this ensure it is.
+            new_driver.proxy = proxy_obj
+            new_driver.get(current_url)
+
+            print_green(f"Proxy on new browser instance set to: {proxy}")
+            return [True, new_driver]
+        return [False]
     except Exception as e:
         # location = get_error_location()
         # task = "swapping proxy"
         # handle_generic_error(location, task, e)
         print(e)
         print("In Swap_Proxy()")
-        return False
+        return [False]
 
 
 def get_captcha_url(driver: webdriver.Chrome) -> Optional[str]:

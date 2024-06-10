@@ -75,15 +75,24 @@ def main() -> None:
 
             if response_text == "swap proxy":
                 print_blue(f"[{thread_id}]: Swapping proxy for query: {query_string}")
-                proxy_swapped = swap_proxy(browser, PROXY_TYPE=config.proxy_type)
-                if not proxy_swapped:
+                
+
+                status_and_browser = swap_proxy(browser, PROXY_TYPE=config.proxy_type, current_url=browser.current_url)
+                if not len(status_and_browser) == 2: # swap_proxy returns either [bool(True), new_driver] or [bool(False)]
                     handle_failure_point("Unable to swap proxy, exiting application with links parsed")
                     return "break"
+                
+                else: # if length of status_and_browser is 2 it has a value of [True, new_driver]
+                    browser = status_and_browser[1]
+
                 solver = RecaptchaSolver(browser, thread_id)
                 if not solver.solveCaptcha():
                     browser.quit()
                     print_red(f"[{thread_id}]: Failed to solve captcha.")
 
+            if response_text is None:
+                return query_string, []
+            
             extracted_hrefs = extract_hrefs(response_text)
             cleaned_links = clean_hrefs(extracted_hrefs, config.excluded_domains)
             print_green(f"[{thread_id}]: Finished processing query: {query_string} with {len(cleaned_links)} unique links")
