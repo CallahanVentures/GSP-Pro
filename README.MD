@@ -24,9 +24,7 @@ This includes but is not limited to:
 ## 🛠️ Roadmap
 
 **Bug Fixes:**
-
-- `utilities.proxy.valid_proxy()` - Add more error handling to this function to handle potential additional errors
-- `utilities.browser.swap_proxy()` - Fix this function to properly swap proxies without crashing the specified thread
+- Currently none 🔥
 
 **Utility Files:**
 
