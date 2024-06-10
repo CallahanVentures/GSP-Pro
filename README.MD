@@ -24,7 +24,7 @@ This includes but is not limited to:
 ## 🛠️ Roadmap
 
 **Bug Fixes:**
-- Currently `None` 🔥
+- Currently: `None`
 
 **Utility Files:**
 
