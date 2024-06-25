@@ -1,0 +1,10 @@
+beautifulsoup4==4.9.3
+colorama==0.4.6
+emoji==2.12.1
+psutil==5.9.5
+pydub==0.25.1
+requests==2.32.3
+selenium==4.22.0
+speechrecognition==3.10.4
+termcolor==1.1.0
+webdriver_manager==4.0.1

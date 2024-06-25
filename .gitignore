@@ -1,6 +1,4 @@
-
 *.pyc
-*.txt
 /src/data
 src/config.ini
 src/proxies.txt
