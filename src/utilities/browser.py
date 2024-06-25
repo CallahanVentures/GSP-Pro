@@ -278,7 +278,8 @@ def get_audio_link(driver: webdriver.Chrome) -> Optional[str]:
 
 def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: str) -> Optional[str]:
     location = get_error_location()
-
+    
+    START_TIME = time.time()
     try:
         driver.get(search_link)
 
@@ -287,14 +288,12 @@ def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: s
                 print_red(f"[{thread_id}]: Captcha present! Please wait while we solve it, this takes about 60 seconds.")
                 solver = RecaptchaSolver(driver, thread_id)
                 captcha_solved = solver.solveCaptcha()
-
                 if captcha_solved is False:
                     handle_failure_point_and_exit(location, "solving captcha")
-
             else:
                 print_red(f"[{thread_id}]: Unable to solve captcha due to IP Block, please wait while we swap proxies.")
                 return "swap proxy"
-
+            
         scroll_count = 0
         while scroll_count < 20:
             try:
@@ -307,10 +306,8 @@ def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: s
                         driver.get(click_result)
                         solver = RecaptchaSolver(driver, thread_id)
                         captcha_solved = solver.solveCaptcha()
-
                         if captcha_solved is True:
                             continue
-
                         else:
                             handle_failure_point_and_exit(location, "solving captcha")
 
@@ -321,27 +318,30 @@ def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: s
 
                 elif isinstance(click_result, bool):
                     if click_result is False:
+                        if time.time() - START_TIME < 180:
+                            scroll_count = 20
                         continue
                     elif click_result is True:
                         scroll_count += 1
                         print_green(f"[{thread_id}]: Scraped page {scroll_count}!")
                     else:
                         continue
-
                 else:
+                    # if time.time() - START_TIME < 180:
+                    #     scroll_count = 20
                     continue
-
             except Exception as e:
                 task = "scrolling through search results"
                 handle_generic_error(location, task, e)
-
+                
         print_green(f"\n[{thread_id}]: Scrolling finished, returning response for parsing.")
         return render_html(driver)
 
     except Exception as e:
         task = "getting search response"
         handle_generic_error(location, task, e)
-    return None
+
+    return render_html(driver) #If 100 second timeout is reached return current page response
 
 
 def click_more_results(driver: webdriver.Chrome, thread_id: str) -> Union[bool, str]:

@@ -72,7 +72,6 @@ def extract_hrefs(content: str) -> List[str]:
         handle_generic_error(location, task, e)
     return []
 
-
 def clean_hrefs(hrefs: List[str], excluded_domains: List[str]) -> List[str]:
     try:
         if hrefs is None:
@@ -96,7 +95,7 @@ def export_links(links: List[str]) -> bool:
         print_green(f"{len(links)} links parsed!\n")
         if len(links) > 0:
             print_blue("\nPlease wait while we export your links.")
-            with open("links.txt", "w", encoding="utf-8") as file:
+            with open("links.txt", "a", encoding="utf-8") as file:
                 for link in links:
                     file.write(link + "\n")
             return True

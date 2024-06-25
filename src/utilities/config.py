@@ -108,9 +108,17 @@ def write_default_config():
         # Defines the configuration file path and contents
         config_path = get_config_path()
         config_file_contents = """[SETTINGS]
-excluded_domains = google.com, /search?client=, /search?q=
+# List of excluded domains separated by commas
+excluded_domains = google.com, /search?client=, /search?q=, .gov
+
+# Number of threads to use for parsing | Recommended Maximum: 3
 thread_count = 1
-proxy_type = http"""
+
+# Type of proxy to use for parsing | Options: http, https, socks4, socks5
+proxy_type = http
+
+# Whether to run vulnerability scan on parsed links | Options: True, False
+run_vuln_scan = True"""
 
         # Write the contents to the configuration file path
         with open(config_path, "w") as config_file:

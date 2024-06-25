@@ -4,11 +4,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from utilities.backup import backup_last_session
 from utilities.branding import show_branding
 from utilities.browser import *
+from utilities.colored import print_red, print_blue, print_green
 from utilities.config import Config, load_config
 from utilities.query import *
 from utilities.scanner import check_links_for_keywords
 from utilities.search import *
-from utilities.colored import print_red, print_blue, print_green
 from utilities.threads import get_thread_id
 from typing import Optional, Tuple, List
 
@@ -24,7 +24,6 @@ def main() -> None:
     if config is None:
         handle_failure_point_and_exit("main.py", "loading config file")
 
-    # assert config is not None
     # Load queries from queries.txt
     queries = load_queries()
 
@@ -69,19 +68,17 @@ def main() -> None:
                 first_dork_decoded, operators_string_decoded, first_search_operator
             )  # Google search location profile
             search_link = generate_search_link(query_string, gs_lp_string)
-
+                
             # Make search request and process results
             response_text = get_search_response(browser, search_link, thread_id)
 
             if response_text == "swap proxy":
                 print_blue(f"[{thread_id}]: Swapping proxy for query: {query_string}")
-                
-
                 status_and_browser = swap_proxy(browser, PROXY_TYPE=config.proxy_type, current_url=browser.current_url)
+                
                 if not len(status_and_browser) == 2: # swap_proxy returns either [bool(True), new_driver] or [bool(False)]
                     handle_failure_point("Unable to swap proxy, exiting application with links parsed")
                     return "break"
-                
                 else: # if length of status_and_browser is 2 it has a value of [True, new_driver]
                     browser = status_and_browser[1]
 
@@ -91,14 +88,16 @@ def main() -> None:
                     print_red(f"[{thread_id}]: Failed to solve captcha.")
 
             if response_text is None:
-                return query_string, []
-            
+                return query_string, "break"
+
             extracted_hrefs = extract_hrefs(response_text)
             cleaned_links = clean_hrefs(extracted_hrefs, config.excluded_domains)
             print_green(f"[{thread_id}]: Finished processing query: {query_string} with {len(cleaned_links)} unique links")
             return query_string, cleaned_links
+            
         except Exception as e:
-            print_red(f"[{thread_id}]: Exception while processing query: {query_string} - {e}")
+            if "GetHandleVerifier" in str(e):
+                print_red(f"[{thread_id}]: Exception while processing query: {query_string}: browser instance was closed")
             return query_string, []
         finally:
             if browser is not None:
@@ -112,9 +111,10 @@ def main() -> None:
             query = future_to_query[future]
             try:
                 query, cleaned_links = future.result()
-                if cleaned_links == "break":
-                    break
-                all_cleaned_links.extend(cleaned_links)
+                if cleaned_links:
+                    if cleaned_links == "break":
+                        break
+                    all_cleaned_links.extend(cleaned_links)
                 print_green(f"Query '{query}' returned {len(cleaned_links)} links")
             except Exception as exc:
                 print_red(f"Query '{query}' generated an exception: {exc}")
