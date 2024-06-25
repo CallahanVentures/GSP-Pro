@@ -115,7 +115,6 @@ def main() -> None:
                     if cleaned_links == "break":
                         break
                     all_cleaned_links.extend(cleaned_links)
-                print_green(f"Query '{query}' returned {len(cleaned_links)} links")
             except Exception as exc:
                 print_red(f"Query '{query}' generated an exception: {exc}")
 

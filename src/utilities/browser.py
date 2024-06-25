@@ -318,17 +318,19 @@ def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: s
 
                 elif isinstance(click_result, bool):
                     if click_result is False:
-                        if time.time() - START_TIME < 180:
+                        if time.time() - START_TIME >= 180:
                             scroll_count = 20
                         continue
                     elif click_result is True:
                         scroll_count += 1
                         print_green(f"[{thread_id}]: Scraped page {scroll_count}!")
                     else:
+                        if time.time() - START_TIME >= 180:
+                            scroll_count = 20
                         continue
                 else:
-                    # if time.time() - START_TIME < 180:
-                    #     scroll_count = 20
+                    if time.time() - START_TIME >= 180:
+                        scroll_count = 20
                     continue
             except Exception as e:
                 task = "scrolling through search results"
