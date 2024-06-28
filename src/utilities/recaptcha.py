@@ -20,8 +20,7 @@ class RecaptchaSolver:
         self.thread_id = thread_id
     
     def solveCaptcha(self):
-        time.sleep(10)
-        time.sleep(random.uniform(2, 5))
+        time.sleep(random.uniform(3, 4))
         
         # Switch to the reCAPTCHA iframe
         iframe_inner = self.driver.execute_script('return document.getElementsByTagName("iframe")[0]')
@@ -29,13 +28,13 @@ class RecaptchaSolver:
         time.sleep(random.uniform(1, 2))
         
         # Click on the reCAPTCHA
-        recaptcha_checkbox = WebDriverWait(self.driver, 10).until(
+        recaptcha_checkbox = WebDriverWait(self.driver, 7).until(
             EC.element_to_be_clickable((By.CLASS_NAME, 'rc-anchor-content'))
         )
         recaptcha_checkbox.click()
         self.driver.switch_to.default_content()
         
-        time.sleep(random.uniform(5, 10))  # wait for reCAPTCHA to load
+        time.sleep(random.uniform(4, 5))  # wait for reCAPTCHA to load
 
         # Check if the reCAPTCHA is solved
         if self.isSolved():
@@ -52,17 +51,17 @@ class RecaptchaSolver:
         time.sleep(random.uniform(3, 5))
         
         # Click on the audio button
-        audio_button = WebDriverWait(self.driver, 10).until(
+        audio_button = WebDriverWait(self.driver, 7).until(
             EC.element_to_be_clickable((By.ID, 'recaptcha-audio-button'))
         )
         audio_button.click()
-        time.sleep(random.uniform(3, 5))
+        time.sleep(3)
         
         if self.isIPBlocked():
             raise Exception(f"[{self.thread_id}]: IP block detected, swapping proxies.")
         
         # Get the audio source
-        audio_source = WebDriverWait(self.driver, 10).until(
+        audio_source = WebDriverWait(self.driver, 5).until(
            EC.presence_of_element_located((By.ID, 'audio-source'))
         )
         src = audio_source.get_attribute('src')
@@ -89,7 +88,7 @@ class RecaptchaSolver:
         key = r.recognize_google(audio)
         
         # Input the key
-        audio_response_input = WebDriverWait(self.driver, 10).until(
+        audio_response_input = WebDriverWait(self.driver, 5).until(
             EC.presence_of_element_located((By.ID, 'audio-response'))
         )
         audio_response_input.send_keys(key.lower())
@@ -97,7 +96,7 @@ class RecaptchaSolver:
         
         # Submit the key
         audio_response_input.send_keys(Keys.ENTER)
-        time.sleep(random.uniform(5, 10))
+        time.sleep(random.uniform(3, 5))
 
         # Switch back to default content
         self.driver.switch_to.default_content()

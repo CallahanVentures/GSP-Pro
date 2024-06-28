@@ -19,9 +19,7 @@ from typing import Optional, Union
 
 
 # Creates a new seleniumwire instance
-def initialize_browser(
-    use_proxy: bool = False, proxy_type: Optional[ConfigProxyType] = None, user_agent=None
-) -> Optional[webdriver.Chrome]:
+def initialize_browser(use_proxy: bool = False, proxy_type: Optional[ConfigProxyType] = None, user_agent=None) -> Optional[webdriver.Chrome]:
     # Error handling variables and options declaration
     task = "initializing webdriver"
     options = webdriver.ChromeOptions()
