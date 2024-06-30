@@ -38,23 +38,13 @@ def generate_search_link(query: str, gs_lp_string: str) -> str:
         exit()
 
     link = "https://www.google.com/search?q="
+    queryStr = quote_plus(query)
     # link += encode_query(query)
-    link += quote_plus(query)
-    link += "&client=firefox-b-d&sca_esv=d312657b286d9ff2&cs=1&biw=1760&bih=849&ei=bzhOZqu9Jfq3ptQPg6Ks6Aw&ved=0ahUKEwjrsJTl8KGGAxX6m4kEHQMRC80Q4dUDCBA&uact=5&gs_lp="
-    link += gs_lp_string
-    link += "&sclient=gws-wiz-serp#ip=1"
+    link += queryStr
+    link += "&oq="
+    link += queryStr
+    link += "&sourceid=chrome&ie=UTF-8"
     return link
-
-
-def make_search_request(link: str, headers: Dict[str, str]) -> Optional[str]:
-    try:
-        response = requests.get(link, headers=headers)
-        with open("debug.html", "w+", encoding="utf-8") as file:
-            file.write(response.text)
-        return response.text
-    except Exception as e:
-        return None
-
 
 def extract_hrefs(content: str) -> List[str]:
     try:
@@ -80,15 +70,12 @@ def clean_hrefs(hrefs: List[str], excluded_domains: List[str]) -> List[str]:
         cleaned_hrefs = [
             href for href in hrefs if href.startswith("http") and not any(domain in href for domain in excluded_domains)
         ]
-
-        print_green(f"{len(hrefs)} links parsed!\n")
         return cleaned_hrefs
     except Exception as e:
         location = get_error_location()
         task = "extracting hrefs from response content"
         handle_generic_error(location, task, e)
         return []
-
 
 def export_links(links: List[str]) -> bool:
     try:

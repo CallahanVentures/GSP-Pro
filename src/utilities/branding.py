@@ -35,12 +35,14 @@ ascii_logo = """
 
 
 application_name = "GSP Pro"
-application_version = "v1.0.0"
+application_version = "v1.1.0"
 heart_emoji = emoji.emojize(":blue_heart:")
 application_credits = f"""Developed with {heart_emoji} by Callahan Ventures LLC - https://callahanventures.com/
 
 Special thanks to:
 sarperavci (https://github.com/sarperavci/GoogleRecaptchaBypass)
+
+verq (https://github.com/cordlesscoder/)
 
 For providing a blueprint on solving RECAPTCHAV2"""
 

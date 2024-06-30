@@ -6,6 +6,7 @@ from utilities.branding import show_branding
 from utilities.browser import *
 from utilities.colored import print_red, print_blue, print_green
 from utilities.config import Config, load_config
+from utilities.logger import Logger
 from utilities.query import *
 from utilities.scanner import check_links_for_keywords
 from utilities.search import *
@@ -20,35 +21,39 @@ from typing import Optional, Tuple, List
 def main() -> None:
     show_branding()
     backup_last_session()
+    logger = Logger()
     config: Optional[Config] = load_config()
     if config is None:
+        logger.logCritical("Error loading configuration file during runtime.")
         handle_failure_point_and_exit("main.py", "loading config file")
 
-    # Load queries from queries.txt
-    queries = load_queries()
+    # Loads queries from queries.txt
+    queries: List[str] = load_queries()
 
-    # Function to process each query
+    # Processes each query
     def process_query(query_string: str) -> Tuple[str, List[str]]:
-        USER_AGENT = random_firefox_ua()
+        USER_AGENT: str = random_chrome_ua()
         try:
             browser = None
-            retries = 5
+            retries: int = 5
 
             for _ in range(retries):
                 browser = initialize_browser(use_proxy=True, proxy_type=config.proxy_type, user_agent=USER_AGENT)
                 if browser is not None:
                     break
-                print_red(f"Failed to initialize browser, retrying...")
+                print_red("Failed to initialize browser, retrying...")
+                logger.logInfo("Failed to initialize browser, retrying...")
 
             if browser is None:
                 return query_string, []
 
-            thread_id = f"Thread {get_thread_id()}"
+            thread_id: str = f"Thread {get_thread_id()}"
             print_blue(f"[{thread_id}]: Processing query: {query_string}")
+            logger.logInfo(f"[{thread_id}]: Processing query: {query_string}")
 
             # Part one
-            first_search_operator = get_first_operator(query_string)
-            first_dork_decoded = str(b"\x12\x0c", "utf-8") + 'gws-wiz-serp"E' + first_search_operator
+            first_search_operator: str = get_first_operator(query_string)
+            first_dork_decoded: str = str(b"\x12\x0c", "utf-8") + 'gws-wiz-serp"E' + first_search_operator
 
             # Part two
             inurl = inurl_queries(query_string)
@@ -68,17 +73,22 @@ def main() -> None:
                 first_dork_decoded, operators_string_decoded, first_search_operator
             )  # Google search location profile
             search_link = generate_search_link(query_string, gs_lp_string)
+            print(search_link)
                 
             # Make search request and process results
             response_text = get_search_response(browser, search_link, thread_id)
 
             if response_text == "swap proxy":
                 print_blue(f"[{thread_id}]: Swapping proxy for query: {query_string}")
+                logger.logInfo(f"[{thread_id}]: Swapping proxy for query: {query_string}")
+
                 status_and_browser = swap_proxy(browser, PROXY_TYPE=config.proxy_type, current_url=browser.current_url)
                 
                 if not len(status_and_browser) == 2: # swap_proxy returns either [bool(True), new_driver] or [bool(False)]
-                    handle_failure_point("Unable to swap proxy, exiting application with links parsed")
+                    handle_failure_point("Unable to swap proxy, closing current thread.")
+                    logger.logCritical("Unable to swap proxy, closing current thread.")
                     return "break"
+                
                 else: # if length of status_and_browser is 2 it has a value of [True, new_driver]
                     browser = status_and_browser[1]
 
@@ -86,6 +96,7 @@ def main() -> None:
                 if not solver.solveCaptcha():
                     browser.quit()
                     print_red(f"[{thread_id}]: Failed to solve captcha.")
+                    logger.logCritical(f"[{thread_id}]: Failed to solve captcha.")
 
             if response_text is None:
                 return query_string, "break"
@@ -93,12 +104,15 @@ def main() -> None:
             extracted_hrefs = extract_hrefs(response_text)
             cleaned_links = clean_hrefs(extracted_hrefs, config.excluded_domains)
             print_green(f"[{thread_id}]: Finished processing query: {query_string} with {len(cleaned_links)} unique links")
+            logger.logInfo(f"[{thread_id}]: Finished processing query: {query_string} with {len(cleaned_links)} unique links")
             return query_string, cleaned_links
             
         except Exception as e:
             if "GetHandleVerifier" in str(e):
                 print_red(f"[{thread_id}]: Exception while processing query: {query_string}: browser instance was closed")
+                logger.logCritical(f"[{thread_id}]: Exception while processing query: {query_string}: browser instance was closed")
             return query_string, []
+        
         finally:
             if browser is not None:
                 close_browser(browser)
@@ -117,6 +131,7 @@ def main() -> None:
                     all_cleaned_links.extend(cleaned_links)
             except Exception as exc:
                 print_red(f"Query '{query}' generated an exception: {exc}")
+                logger.logError(f"Query '{query}' generated an exception: {exc}")
 
     # Ensure all_cleaned_links has unique links
     unique_cleaned_links = list(set(all_cleaned_links))
@@ -129,7 +144,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        quit()
+    main()

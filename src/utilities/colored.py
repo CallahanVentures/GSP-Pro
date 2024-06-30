@@ -9,14 +9,11 @@ just_fix_windows_console()
 def print_blue(x: str):
     print(colored(x, "cyan"))
 
-
 def print_green(x: str):
     print(colored(x, "green"))
 
-
 def print_red(x: str):
     print(colored(x, "red"))
-
 
 def print_purple(x: str):
     print(colored(x, "magenta"))

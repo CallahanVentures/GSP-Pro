@@ -68,7 +68,6 @@ def backup_last_session() -> None:
     except Exception as e:
         handle_generic_error(location, task, e)
 
-
 def backup_old_session_files(old_links_files:List[str], old_vulnerables_files:List[str], backup_folder:str) -> None:
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 

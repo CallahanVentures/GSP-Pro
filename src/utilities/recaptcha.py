@@ -1,10 +1,15 @@
 # forked from: https://github.com/sarperavci/GoogleRecaptchaBypass
 # modified to use selenium instead of DrissionPage
+# As of v1.0.3 Increased Captcha solver speed by 29.58% - 35.16%
+
+# extractToken() was forked from https://github.com/MachineKillin/Ciper
+
 import os
 import urllib
 import random
 import pydub
 import speech_recognition
+import re
 import time
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
@@ -12,14 +17,26 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from urllib.parse import urlparse
 from utilities.colored import print_green, print_red
 
 class RecaptchaSolver:
     def __init__(self, driver: webdriver.Chrome, thread_id:str):
-        self.driver = driver
-        self.thread_id = thread_id
+        self.driver: webdriver.Chrome = driver
+        self.thread_id: str = thread_id
     
-    def solveCaptcha(self):
+    def extractToken(self) -> str:
+        try:
+            abuseExceptionToken = self.driver.get_cookie('GOOGLE_ABUSE_EXEMPTION')['value']
+            bypass = abuseExceptionToken
+        except:
+            url = str(urlparse(self.driver.current_url))
+            token = str(re.findall("(?<=GOOGLE_ABUSE_EXEMPTION=).+?(?=; path=/;)", url)).replace("['", "").replace("']", "")
+            token = token
+            bypass = token
+        return bypass
+    
+    def solveCaptcha(self) -> bool:
         time.sleep(random.uniform(3, 4))
         
         # Switch to the reCAPTCHA iframe
@@ -104,12 +121,15 @@ class RecaptchaSolver:
         # Check if the captcha is solved
         if self.isSolved():
             print_green(f"[{self.thread_id}]: Captcha solved!")
+            token = self.extractToken()
+            self.driver.add_cookie({'name': 'GOOGLE_ABUSE_EXEMPTION', 'value': token})
+            #print(self.driver.get_cookie("GOOGLE_ABUSE_EXEMPTION"))
             return True
         else:
             print_red(f"[{self.thread_id}]: Failed to solve captcha.")
             return False
 
-    def isSolved(self):
+    def isSolved(self) -> bool:
         try:
             if "https://www.google.com/search?" in self.driver.current_url:
                 return True
@@ -121,10 +141,10 @@ class RecaptchaSolver:
         except:
             return False
     
-    def isIPBlocked(driver:webdriver.Chrome):
+    def isIPBlocked(self) -> bool:
         try:
             ip_block = "Your computer or network may be sending automated queries. To protect our users, we can't process your request right now."
-            return ip_block in driver.execute_script("return document.documentElement.innerHTML;")
+            return ip_block in self.driver.execute_script("return document.documentElement.innerHTML;")
         except TimeoutException:
             return False
         except NoSuchElementException:
