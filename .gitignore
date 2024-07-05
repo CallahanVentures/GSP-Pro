@@ -1,5 +1,6 @@
 *.pyc
 /src/data
+/src/not-implemented
 src/config.ini
 src/proxies.txt
 src/queries.txt
