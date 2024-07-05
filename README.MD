@@ -26,7 +26,7 @@ This includes but is not limited to:
 **Future Features:**
 - `crash.py` - Implement crash reporting to `data/crashReports`, logging potential issues during runtime.
 - `reputation.py` - Implement functionality to check reputation of provided proxies, returning only those that are deemed 'clean'.
-- `utilities.proxy` - Add support for USER:PASS authentication for proxies
+- `utilities.proxy` - Add support for `USER:PASS` authentication for proxies.
 
 ## 💻 System Requirements
 
