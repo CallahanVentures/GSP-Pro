@@ -73,7 +73,6 @@ def main() -> None:
                 first_dork_decoded, operators_string_decoded, first_search_operator
             )  # Google search location profile
             search_link = generate_search_link(query_string, gs_lp_string)
-            print(search_link)
                 
             # Make search request and process results
             response_text = get_search_response(browser, search_link, thread_id)
