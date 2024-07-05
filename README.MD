@@ -40,8 +40,7 @@ These are the non-package requirements to run this application.
 
 - 4GB DDR3 RAM
 - Google Chrome (Latest) - [Download link](https://www.google.com/chrome/dr/download/)
-- Python 3.10 (64 bit) - [Download link](https://www.python.org/ftp/python/3.10.0/python-3.10.0-amd64.exe)
-- Windows 10
+- Python 3.10 (64 bit) - [Download link](https://www.python.org/ftp/python/3.10.0/)
 
 ## ⚙️ Installation
 
