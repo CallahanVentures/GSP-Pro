@@ -23,16 +23,10 @@ This includes but is not limited to:
 
 ## 🛠️ Roadmap
 
-**Bug Fixes:**
-
-- `utilities.proxy.valid_proxy()` - Add more error handling to this function to handle potential additional errors
-- `utilities.browser.swap_proxy()` - Fix this function to properly swap proxies without crashing the specified thread
-
-**Utility Files:**
-
-- `browserv2.py` - Rewrite `browser.py` to use pyppeteer to utilize an actual headless driver instead of simply placing the window off-screen.
+**Future Features:**
 - `crash.py` - Implement crash reporting to `data/crashReports`, logging potential issues during runtime.
-- `logger.py` - Implement a runtime logger similar to `crash.py`, except this will run independently of any crash handling.
+- `reputation.py` - Implement functionality to check reputation of provided proxies, returning only those that are deemed 'clean'.
+- `utilities.proxy` - Add support for USER:PASS authentication for proxies
 
 ## 💻 System Requirements
 
