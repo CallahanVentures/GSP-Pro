@@ -1,15 +1,29 @@
 #!/usr/bin/env python3
 # main.py
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from utilities.backup import backup_last_session
 from utilities.branding import show_branding
-from utilities.browser import *
+from utilities.browser import (
+    close_browser,
+    get_search_response,
+    initialize_browser,
+    random_chrome_ua,
+    swap_proxy,
+)
 from utilities.colored import print_red, print_blue, print_green
 from utilities.config import Config, load_config
+from utilities.errors import handle_failure_point, handle_failure_point_and_exit
 from utilities.logger import Logger
-from utilities.query import *
+from utilities.query import load_queries
+from utilities.recaptcha import RecaptchaSolver
 from utilities.scanner import check_links_for_keywords
-from utilities.search import *
+from utilities.search import (
+    clean_hrefs,
+    export_links,
+    extract_hrefs,
+    generate_search_link,
+)
 from utilities.threads import get_thread_id
 from typing import Optional, Tuple, List
 
@@ -50,29 +64,8 @@ def main() -> None:
             thread_id: str = f"Thread {get_thread_id()}"
             print_blue(f"[{thread_id}]: Processing query: {query_string}")
             logger.logInfo(f"[{thread_id}]: Processing query: {query_string}")
-
-            # Part one
-            first_search_operator: str = get_first_operator(query_string)
-            first_dork_decoded: str = str(b"\x12\x0c", "utf-8") + 'gws-wiz-serp"E' + first_search_operator
-
-            # Part two
-            inurl = inurl_queries(query_string)
-            intext = intext_queries(query_string)
-            ext = ext_queries(query_string)
-            intitle = intitle_queries(query_string)
-            site = site_queries(query_string)
-            numrange = numrange_queries(query_string)
-            after = after_queries(query_string)
-            before = before_queries(query_string)
-            negatives = negative_queries(query_string)
-            operators_string_decoded = " ".join(
-                filter(None, [inurl, intext, ext, intitle, site, numrange, after, before, negatives])
-            )
-
-            gs_lp_string = get_gs_lp(
-                first_dork_decoded, operators_string_decoded, first_search_operator
-            )  # Google search location profile
-            search_link = generate_search_link(query_string, gs_lp_string)
+            
+            search_link = generate_search_link(query_string)
                 
             # Make search request and process results
             response_text = get_search_response(browser, search_link, thread_id)

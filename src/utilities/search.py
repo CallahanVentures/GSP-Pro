@@ -6,14 +6,13 @@ from utilities.query import (
     encode_query2,
     clean_query2,
     quote_plus,
-)  # imports urlib.parse.quote_plus() from query.py
-import requests
+)
 
-from typing import Optional, Dict, List
+from typing import List
 
 
 # Search utilities
-#
+
 # Preserved for storytelling reasons
 def get_gs_lp(query1, query2, first_operator):
     """Cleans query 2 as its encoded counterpart requires the first operator removed,
@@ -32,14 +31,13 @@ def get_gs_lp(query1, query2, first_operator):
         exit()
 
 
-def generate_search_link(query: str, gs_lp_string: str) -> str:
-    if not (query and gs_lp_string):
-        print("Invalid Query Provided")
+def generate_search_link(query: str) -> str:
+    if not query:
+        print(f"Invalid Query Provided: `{query}`")
         exit()
 
     link = "https://www.google.com/search?q="
     queryStr = quote_plus(query)
-    # link += encode_query(query)
     link += queryStr
     link += "&oq="
     link += queryStr

@@ -12,7 +12,6 @@ import speech_recognition
 import re
 import time
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -29,7 +28,7 @@ class RecaptchaSolver:
         try:
             abuseExceptionToken = self.driver.get_cookie('GOOGLE_ABUSE_EXEMPTION')['value']
             bypass = abuseExceptionToken
-        except:
+        except Exception:
             url = str(urlparse(self.driver.current_url))
             token = str(re.findall("(?<=GOOGLE_ABUSE_EXEMPTION=).+?(?=; path=/;)", url)).replace("['", "").replace("']", "")
             token = token
@@ -138,18 +137,12 @@ class RecaptchaSolver:
             self.driver.switch_to.default_content()
             checkbox = self.driver.find_element(By.CLASS_NAME, 'recaptcha-checkbox-checkmark')
             return checkbox.is_displayed()
-        except:
+        except Exception:
             return False
     
     def isIPBlocked(self) -> bool:
         try:
             ip_block = "Your computer or network may be sending automated queries. To protect our users, we can't process your request right now."
             return ip_block in self.driver.execute_script("return document.documentElement.innerHTML;")
-        except TimeoutException:
-            return False
-        except NoSuchElementException:
-            return False
-        except WebDriverException:
-            return False
         except Exception:
             return False

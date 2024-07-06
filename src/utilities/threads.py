@@ -21,7 +21,7 @@ def calc_max_threads() -> int:
     try:
         max_threads = AVAILABLE_SYS_MEM_IN_BYTES // MEM_USED_PER_INSTANCE_IN_BYTES
         return max(max_threads, 1)
-    except Exception as e:
+    except Exception:
         return 1
 
 

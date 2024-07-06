@@ -44,8 +44,11 @@ def check_links_for_keywords(links):
                 print_green(f"Link: {link}")
                 print_green(f"Keywords found: {', '.join(found_keywords)}\n")
                 file.write(f"{link}\n")
+    if count == 0:
+        print_red("No vulnerable links were found, exiting now.")
     
-    print_green(f"Exported {count} vulnerable links to 'vulnerables.txt'")
+    else:
+        print_green(f"Exported {count} vulnerable links to 'vulnerables.txt'")
     
 
 

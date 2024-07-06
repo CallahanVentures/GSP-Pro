@@ -6,9 +6,8 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 from utilities.colored import print_green, print_red, print_blue
-from utilities.config import Config
 from utilities.errors import get_error_location, handle_generic_error, handle_failure_point_and_exit
 from utilities.config import ProxyType as ConfigProxyType
 from utilities.proxy import random_proxy, valid_proxy
@@ -16,7 +15,6 @@ from utilities.recaptcha import RecaptchaSolver
 from webdriver_manager.chrome import ChromeDriverManager
 import random
 import time
-import os
 
 # Creates a new seleniumwire instance
 def initialize_browser(use_proxy: bool = False, proxy_type: Optional[ConfigProxyType] = None, user_agent: Optional[str] = None) -> Optional[webdriver.Chrome]:
@@ -105,7 +103,7 @@ def random_chrome_ua() -> str:
 
     return user_agent
 
-def proxy_works_in_browser(driver: webdriver.Chrome):
+def proxy_works_in_browser(driver: webdriver.Chrome) -> bool:
     """
     Ensures the set proxy works on the provided ChromeDriver instance by trying to access google.com.
 
@@ -142,7 +140,7 @@ def render_html(driver: webdriver.Chrome) -> str:
         handle_generic_error(location, task, e)
         return ""
 
-def page_table_present(driver: webdriver.Chrome):
+def page_table_present(driver: webdriver.Chrome) -> bool:
     try:
         return '<table class="AaVjTc" style="border-collapse:collapse;text-align:left" role="presentation">' in render_html(
             driver
@@ -373,7 +371,7 @@ def click_more_results(driver: webdriver.Chrome, thread_id: str) -> Union[bool, 
 
         return False
 
-def close_browser(driver: webdriver.Chrome):
+def close_browser(driver: webdriver.Chrome) -> None:
     try:
         driver.quit()
     except Exception as e:
