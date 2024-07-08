@@ -1,15 +1,8 @@
-# forked from: https://github.com/sarperavci/GoogleRecaptchaBypass
-# modified to use selenium instead of DrissionPage
-# As of v1.0.3 Increased Captcha solver speed by 29.58% - 35.16%
-
-# extractToken() was forked from https://github.com/MachineKillin/Ciper
-
 import os
 import urllib
 import random
 import pydub
 import speech_recognition
-import re
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -20,22 +13,13 @@ from urllib.parse import urlparse
 from utilities.colored import print_green, print_red
 
 class RecaptchaSolver:
-    def __init__(self, driver: webdriver.Chrome, thread_id:str):
+    def __init__(self, driver: webdriver.Chrome, thread_id: str):
         self.driver: webdriver.Chrome = driver
         self.thread_id: str = thread_id
     
-    def extractToken(self) -> str:
-        try:
-            abuseExceptionToken = self.driver.get_cookie('GOOGLE_ABUSE_EXEMPTION')['value']
-            bypass = abuseExceptionToken
-        except Exception:
-            url = str(urlparse(self.driver.current_url))
-            token = str(re.findall("(?<=GOOGLE_ABUSE_EXEMPTION=).+?(?=; path=/;)", url)).replace("['", "").replace("']", "")
-            token = token
-            bypass = token
-        return bypass
-    
     def solveCaptcha(self) -> bool:
+        start_time = time.time()  # Record the start time
+        
         time.sleep(random.uniform(3, 4))
         
         # Switch to the reCAPTCHA iframe
@@ -54,7 +38,8 @@ class RecaptchaSolver:
 
         # Check if the reCAPTCHA is solved
         if self.isSolved():
-            print_green("Captcha Solved!")
+            elapsed_time = time.time() - start_time
+            print_green(f"[{self.thread_id}]: Captcha solved in {elapsed_time:.2f} seconds!")
             return True
         
         # Switch to the new iframe
@@ -62,12 +47,11 @@ class RecaptchaSolver:
         self.driver.switch_to.frame(iframe)
 
         enable_audio_button = "var element = document.getElementById('recaptcha-audio-button'); element.disabled = false; element.classList.remove('rc-button-disabled');"
-
         self.driver.execute_script(enable_audio_button)
         time.sleep(random.uniform(3, 5))
         
         # Click on the audio button
-        audio_button = WebDriverWait(self.driver, 7).until(
+        audio_button = WebDriverWait(self.driver, 5).until(
             EC.element_to_be_clickable((By.ID, 'recaptcha-audio-button'))
         )
         audio_button.click()
@@ -119,10 +103,8 @@ class RecaptchaSolver:
 
         # Check if the captcha is solved
         if self.isSolved():
-            print_green(f"[{self.thread_id}]: Captcha solved!")
-            token = self.extractToken()
-            self.driver.add_cookie({'name': 'GOOGLE_ABUSE_EXEMPTION', 'value': token})
-            #print(self.driver.get_cookie("GOOGLE_ABUSE_EXEMPTION"))
+            elapsed_time = time.time() - start_time
+            print_green(f"[{self.thread_id}]: Captcha solved in {elapsed_time:.2f} seconds!")
             return True
         else:
             print_red(f"[{self.thread_id}]: Failed to solve captcha.")

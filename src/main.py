@@ -95,6 +95,7 @@ def main() -> None:
 
             extracted_hrefs = extract_hrefs(response_text)
             cleaned_links = clean_hrefs(extracted_hrefs, config.excluded_domains)
+
             print_green(f"[{thread_id}]: Finished processing query: {query_string} with {len(cleaned_links)} unique links")
             logger.logInfo(f"[{thread_id}]: Finished processing query: {query_string} with {len(cleaned_links)} unique links")
             return query_string, cleaned_links
@@ -126,7 +127,7 @@ def main() -> None:
                 logger.logError(f"Query '{query}' generated an exception: {exc}")
 
     # Ensure all_cleaned_links has unique links
-    unique_cleaned_links = list(set(all_cleaned_links))
+    unique_cleaned_links = all_cleaned_links
 
     # Export all collected links
     export_links(unique_cleaned_links)

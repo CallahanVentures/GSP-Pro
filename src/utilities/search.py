@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from typing import List
 from utilities.colored import print_blue, print_green, print_red
 from utilities.errors import get_error_location, handle_failure_point, handle_generic_error
 from utilities.query import (
@@ -7,8 +8,6 @@ from utilities.query import (
     clean_query2,
     quote_plus,
 )
-
-from typing import List
 
 
 # Search utilities
@@ -30,7 +29,6 @@ def get_gs_lp(query1, query2, first_operator):
         print("In get_gs_lp")
         exit()
 
-
 def generate_search_link(query: str) -> str:
     if not query:
         print(f"Invalid Query Provided: `{query}`")
@@ -44,16 +42,18 @@ def generate_search_link(query: str) -> str:
     link += "&sourceid=chrome&ie=UTF-8"
     return link
 
-def extract_hrefs(content: str) -> List[str]:
+def extract_hrefs(responses: List[str]) -> List[str]:
     try:
-        location = "utilities.functions.extract_hrefs_from_response_content(content)"  # Used for error handling
+        location = "utilities.search.extract_hrefs()"  # Used for error handling
         task = "extracting hrefs from response content"  # Used for error handling
-        soup = BeautifulSoup(content, "html.parser")  # Parses the HTML content using BeautifulSoup
-        hrefs = [a["href"] for a in soup.find_all("a", href=True)]  # Extracts all hrefs found in response content
+        hrefs = []
+        for content in responses:
+            soup = BeautifulSoup(content, "html.parser")  # Parses the HTML content using BeautifulSoup
+            hrefs.extend(a["href"] for a in soup.find_all("a", href=True))  # Extracts all hrefs found in response content
         if hrefs:
             return hrefs
         handle_failure_point(
-            "No href tags found, ensure your query is properly formatted and contains atleast two search operators."
+            "No href tags found, ensure your query is properly formatted and contains at least two search operators."
         )
 
     except Exception as e:
@@ -93,3 +93,4 @@ def export_links(links: List[str]) -> bool:
         task = "trying to export your links"
         handle_generic_error(location, task, e)
         return False
+    

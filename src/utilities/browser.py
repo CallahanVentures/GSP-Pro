@@ -6,9 +6,9 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from typing import Optional, Union
+from typing import List, Optional, Union
 from utilities.colored import print_green, print_red, print_blue
-from utilities.errors import get_error_location, handle_generic_error, handle_failure_point_and_exit
+from utilities.errors import get_error_location, handle_generic_error, handle_failure_point_and_exit, handle_failure_point
 from utilities.config import ProxyType as ConfigProxyType
 from utilities.proxy import random_proxy, valid_proxy
 from utilities.recaptcha import RecaptchaSolver
@@ -24,6 +24,7 @@ def initialize_browser(use_proxy: bool = False, proxy_type: Optional[ConfigProxy
 
     # Global options
     options.add_argument("--log-level=3")
+    #options.add_argument("--start-maximized")
     options.add_experimental_option("excludeSwitches", ["enable-logging"])  # Removes devtools print statement
 
     if user_agent:
@@ -277,13 +278,19 @@ def get_audio_link(driver: webdriver.Chrome) -> Optional[str]:
         print(f"An error occurred: {e}")
         return None
 
+def parse_next_page_url(html: str) -> str:
+    soup = BeautifulSoup(html, 'html.parser')
+    next_button = soup.find('a', id='pnnext')
+    if next_button:
+        return next_button['href']
+    return None
+
 def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: str) -> Optional[str]:
     location = get_error_location()
-    
     START_TIME = time.time()
+    responses = []
     try:
         driver.get(search_link)
-
         if "https://www.google.com/sorry/index?continue=" in driver.current_url:
             if captcha_missing(driver) is False:
                 print_red(f"[{thread_id}]: Captcha present! Please wait while we solve it, this takes about 40 seconds.")
@@ -296,6 +303,7 @@ def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: s
                 return "swap proxy"
             
         scroll_count = 0
+        captcha_attempts = 0
         while scroll_count < 25:
             try:
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -305,12 +313,17 @@ def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: s
                 if isinstance(click_result, str):
                     if "https://www.google.com/sorry/index?continue=" in click_result:
                         driver.get(click_result)
+                        captcha_attempts += 1
                         solver = RecaptchaSolver(driver, thread_id)
                         captcha_solved = solver.solveCaptcha()
+                        if captcha_attempts > 2:
+                            break
+
                         if captcha_solved is True:
                             continue
                         else:
-                            handle_failure_point_and_exit(location, "solving captcha")
+                            print_red(f"[{thread_id}]: Failed to solve captcha.")
+                            break
 
                     elif "break" in click_result:
                         break
@@ -329,22 +342,66 @@ def get_search_response(driver: webdriver.Chrome, search_link: str, thread_id: s
                         if time.time() - START_TIME >= 200:
                             scroll_count = 25
                         continue
+
+                
+                elif isinstance(click_result, list):
+                    if len(click_result) == 2 and click_result[0] == False:  # If this is True [0] is status (True/False) [1] is html content
+                        html = click_result[1]
+                        responses.append(html)
+                        pages_scraped = 0
+                        while pages_scraped < 20:
+                            time.sleep(random.uniform(3, 5))
+                            target_span_element = WebDriverWait(driver, 10).until(
+                                EC.element_to_be_clickable((By.XPATH, "//span[@class='SJajHc NVbCr' and contains(@style, 'background:url(/images/nav_logo321_hr.webp)')]"))
+                            )
+                            try:
+                                driver.execute_script("arguments[0].scrollIntoView(true);", target_span_element)
+                                time.sleep(1)
+                            except Exception as e:
+                                if "javascript error: Cannot set properties of null (setting 'disabled')" in str(e):
+                                    break
+                            
+                            next_page_url = parse_next_page_url(html) # Parse the next page URL from the current HTML
+                            if not next_page_url:
+                                print("Next page URL not found, ending loop.")
+                                break
+                            
+                            # Navigate to the next page using the parsed URL
+                            next_page_full_url = f"https://www.google.com{next_page_url}"  # Adjust the base URL if necessary
+                            driver.get(next_page_full_url)
+
+                            # Wait for the page to load
+                            time.sleep(random.uniform(2, 4))
+
+                            # Get the new HTML and append it to responses
+                            new_html = render_html(driver)
+                            responses.append(new_html)
+
+                            # Update the HTML for the next iteration
+                            html = new_html
+                            pages_scraped += 1
+                            
+                            print_green(f"[{thread_id}]: Scraped page {pages_scraped}!")
+
+                        continue
+                    continue
+                        
+
                 else:
                     if time.time() - START_TIME >= 180:
                         scroll_count = 20
                     continue
             except Exception as e:
-                task = "scrolling through search results"
-                handle_generic_error(location, task, e)
+                return [render_html(driver)] if responses == [] else responses
                 
         print_green(f"\n[{thread_id}]: Scrolling finished, returning response for parsing.")
-        return render_html(driver)
+        return [render_html(driver)] if responses == [] else responses
 
     except Exception as e:
         task = "getting search response"
         handle_generic_error(location, task, e)
 
-    return render_html(driver) #If 100 second timeout is reached return current page response
+    return [render_html(driver)] if responses == [] else responses #If 100 second timeout is reached return current page response
 
 def click_more_results(driver: webdriver.Chrome, thread_id: str) -> Union[bool, str]:
     try:
@@ -357,8 +414,10 @@ def click_more_results(driver: webdriver.Chrome, thread_id: str) -> Union[bool, 
     except Exception as e:
         if captcha_onload(driver):
             return driver.current_url
-        elif all_results_present(driver) or page_table_present(driver):
+        elif all_results_present(driver):
             return "break"
+        elif page_table_present(driver):
+            return [False, render_html(driver)]
         elif captcha_present(e):
             print_red(f"[{thread_id}]: Captcha found!")
             print(e)
