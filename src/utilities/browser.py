@@ -17,7 +17,7 @@ import random
 import time
 
 # Creates a new seleniumwire instance
-def initialize_browser(use_proxy: bool = False, proxy_type: Optional[ConfigProxyType] = None, user_agent: Optional[str] = None) -> Optional[webdriver.Chrome]:
+def initialize_browser(use_proxy: bool = False, proxy_type: Optional[ConfigProxyType] = None, proxy_auth: bool = False, user_agent: Optional[str] = None) -> Optional[webdriver.Chrome]:
     # Error handling variables and options declaration
     task = "initializing webdriver"
     options = webdriver.ChromeOptions()
@@ -36,12 +36,12 @@ def initialize_browser(use_proxy: bool = False, proxy_type: Optional[ConfigProxy
 
         for _ in range(max_retries):
             PROXY = random_proxy()
-            if valid_proxy(PROXY, proxy_type):
+            if valid_proxy(PROXY, proxy_type, proxy_auth):
                 break
 
-        if valid_proxy(PROXY, proxy_type):
+        if valid_proxy(PROXY, proxy_type, proxy_auth):
             print_blue(f"Initializing browser using proxy: {PROXY}")
-            options.add_argument(f"--proxy-server={PROXY}")
+            options.add_argument(f"--proxy-server={proxy_type.value}://{PROXY}")
         else:
             print_blue("Proxy verification failed. Initializing browser without proxy.")
     else:
@@ -187,7 +187,7 @@ def captcha_missing(driver) -> bool:
         print(f"An unexpected error occurred: {str(e)}")
         return False
 
-def swap_proxy(driver: webdriver.Chrome, PROXY_TYPE: ConfigProxyType = ConfigProxyType.HTTP, retries: int = 10, current_url: str = None) -> Union[bool, webdriver.Chrome]:
+def swap_proxy(driver: webdriver.Chrome, PROXY_TYPE: ConfigProxyType = ConfigProxyType.HTTP, proxy_auth: bool = False, retries: int = 10, current_url: str = None) -> Union[bool, webdriver.Chrome]:
     """
     Generates a valid proxy of the defined PROXY_TYPE with the specified retry count.
 
@@ -210,7 +210,7 @@ def swap_proxy(driver: webdriver.Chrome, PROXY_TYPE: ConfigProxyType = ConfigPro
         while not working_proxy and attempts < retries:
             attempts += 1
             proxy = random_proxy()
-            working_proxy = valid_proxy(proxy, PROXY_TYPE)
+            working_proxy = valid_proxy(proxy, PROXY_TYPE, proxy_auth)
 
         if working_proxy:
             # Parse proxy string
@@ -226,7 +226,7 @@ def swap_proxy(driver: webdriver.Chrome, PROXY_TYPE: ConfigProxyType = ConfigPro
             driver.close()
 
             print_red(f"Starting a new browser instance with proxy: {proxy}")
-            new_driver = initialize_browser(use_proxy=True, proxy_type=PROXY_TYPE, user_agent=random_chrome_ua())
+            new_driver = initialize_browser(use_proxy=True, proxy_type=PROXY_TYPE, proxy_auth=proxy_auth, user_agent=random_chrome_ua())
 
             # Although new_driver's proxy should be set, this ensure it is.
             new_driver.proxy = proxy_obj

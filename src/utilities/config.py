@@ -20,6 +20,7 @@ class Config:
     excluded_domains: List[str] = []
     thread_count: int = 1
     proxy_type: ProxyType = ProxyType.HTTP
+    proxy_auth: bool = False
     run_vuln_scan: bool = True
 
 
@@ -86,6 +87,7 @@ def load_config() -> Optional[Config]:
                 f"Invalid proxy_type value. The valid values are: {','.join(ProxyType)}",
                 e,
             )
+        config.proxy_auth = config_parser.getboolean("SETTINGS", "proxy_auth", fallback=False)
         config.run_vuln_scan = config_parser.getboolean("SETTINGS", "run_vuln_scan", fallback=False)
 
         print_green("Successfully loaded configuration file!")
@@ -109,13 +111,16 @@ def write_default_config():
         config_path = get_config_path()
         config_file_contents = """[SETTINGS]
 # List of excluded domains separated by commas
-excluded_domains = google.com, /search?client=, /search?q=, .gov
+excluded_domains = google.com, /search?client=, /search?q=, .gov, .edu, .mil, .bank
 
-# Number of threads to use for parsing | Recommended Maximum: 3
+# Number of threads to use for parsing | Recommended Maximum: 5
 thread_count = 1
 
 # Type of proxy to use for parsing | Options: http, https, socks4, socks5
 proxy_type = http
+
+# Whether your proxies have USER:PASS authentication | Options: True, False
+proxy_auth = False
 
 # Whether to run vulnerability scan on parsed links | Options: True, False
 run_vuln_scan = True"""

@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utilities.backup import backup_last_session
+from utilities.blacklist import runCheck
 from utilities.branding import show_branding
 from utilities.browser import (
     close_browser,
@@ -16,6 +17,7 @@ from utilities.config import Config, load_config
 from utilities.errors import handle_failure_point, handle_failure_point_and_exit
 from utilities.logger import Logger
 from utilities.query import load_queries
+from utilities.proxy import load_proxies
 from utilities.recaptcha import RecaptchaSolver
 from utilities.scanner import check_links_for_keywords
 from utilities.search import (
@@ -33,26 +35,38 @@ from typing import Optional, Tuple, List
 
 
 def main() -> None:
-    show_branding()
-    backup_last_session()
-    logger = Logger()
-    config: Optional[Config] = load_config()
+    show_branding() # Displays logo, version, features
+    backup_last_session()  # Backups up links.txt and vulnerables.txt
+    logger = Logger() # Initalizes logger instance
+    config: Optional[Config] = load_config() # Loads config.ini
     if config is None:
         logger.logCritical("Error loading configuration file during runtime.")
         handle_failure_point_and_exit("main.py", "loading config file")
 
-    # Loads queries from queries.txt
-    queries: List[str] = load_queries()
+    queries: List[str] = load_queries() # Loads queries from queries.txt
 
-    # Processes each query
-    def process_query(query_string: str) -> Tuple[str, List[str]]:
+    proxies: List[str] = load_proxies() # Loads proxies for blacklist testing before running process_query
+
+    logger.logInfo("Running proxy blacklist check")
+    print_green("Running proxy blacklist check, refresh 'output.log' for information during this process.")
+    isBlacklisted, isClean, wasSkipped = runCheck(proxies, config.proxy_type, logger) # If an error occurs while load proxies, this will not be reached
+    
+    print_green("Proxy blacklist check completed, results are displayed below.")
+    print_blue(f"Blacklisted: {len(isBlacklisted)}" if isBlacklisted is not None else "Blacklisted: Error Checking")
+    print_blue(f"Clean: {len(isClean)}" if isClean is not None else "Clean: Error Checking")
+    print_blue(f"Skipped: {len(wasSkipped)}" if wasSkipped is not None else "Was Skipped: Error Checking")
+    exit()
+    
+
+    
+    def process_query(query_string: str) -> Tuple[str, List[str]]: # Processes each query
         USER_AGENT: str = random_chrome_ua()
         try:
             browser = None
             retries: int = 5
 
             for _ in range(retries):
-                browser = initialize_browser(use_proxy=True, proxy_type=config.proxy_type, user_agent=USER_AGENT)
+                browser = initialize_browser(use_proxy=True, proxy_type=config.proxy_type, proxy_auth=config.proxy_auth, user_agent=USER_AGENT)
                 if browser is not None:
                     break
                 print_red("Failed to initialize browser, retrying...")
@@ -74,7 +88,7 @@ def main() -> None:
                 print_blue(f"[{thread_id}]: Swapping proxy for query: {query_string}")
                 logger.logInfo(f"[{thread_id}]: Swapping proxy for query: {query_string}")
 
-                status_and_browser = swap_proxy(browser, PROXY_TYPE=config.proxy_type, current_url=browser.current_url)
+                status_and_browser = swap_proxy(browser, PROXY_TYPE=config.proxy_type, proxy_auth=config.proxy_auth, current_url=browser.current_url)
                 
                 if not len(status_and_browser) == 2: # swap_proxy returns either [bool(True), new_driver] or [bool(False)]
                     handle_failure_point("Unable to swap proxy, closing current thread.")

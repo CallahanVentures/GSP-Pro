@@ -57,21 +57,40 @@ def timed_out(e: Exception) -> bool:
     return "Cannot connect to proxy" or "Read timed out" in str(e)
 
 
-def valid_proxy(proxy: str, proxy_type: ProxyType) -> bool:
+def valid_proxy(proxy: str, proxy_type: ProxyType, proxy_auth: bool) -> bool:
     try:
-        proxy_type = proxy_type.name.lower()
+        proxy_type_str = proxy_type.name.lower()
         if proxy in ["", None]:
             location = get_error_location()
             task = "verifying proxy, proxy selected is an empty or null value"
             handle_failure_point_and_exit(location, task)
+            return False
+        
+        if proxy_auth:
+            parts = proxy.split(":")
+            if len(parts) != 3:
+                task = "invalid proxy format, expected ip:port:user:pass"
+                print(task)
+                return False
 
-        proxies = {"http": f"{proxy_type}://{proxy}", "https": f"{proxy_type}://{proxy}"}
+            user, password, ip, port = parts[0], parts[1].split("@")[0], parts[1].split("@")[1], parts[2]
+            proxy_url = f"{user}:{password}@{ip}:{port}"
+            proxies = {
+                "http": f"{proxy_type_str}://{proxy_url}",
+                "https": f"{proxy_type_str}://{proxy_url}"
+            }
+        else:
+            proxies = {
+                "http": f"{proxy_type_str}://{proxy}",
+                "https": f"{proxy_type_str}://{proxy}"
+            }
+            ip = proxy.split(":")[0]
 
         response = requests.get("https://httpbin.org/ip", proxies=proxies, timeout=10)
         response.raise_for_status()
 
         origin_ip = response.json().get("origin")
-        return origin_ip and proxy.split(":")[0] in origin_ip
+        return origin_ip and ip in origin_ip
 
     except requests.exceptions.ProxyError as e:
         location = get_error_location()
@@ -86,18 +105,16 @@ def valid_proxy(proxy: str, proxy_type: ProxyType) -> bool:
     except requests.exceptions.Timeout as e:
         print(e)
         location = get_error_location()
-        task = "verifying proxy due to timeout error"
+        task = "verifying proxy due to a timeout error"
         handle_failure_point_and_exit(location, task, e)
         return False
     except requests.exceptions.RequestException as e:
         location = get_error_location()
-        task = "verifying proxy due to requests error"
+        task = "verifying proxy due to a request error"
         handle_failure_point_and_exit(location, task, e)
         return False
     except Exception as e:
         location = get_error_location()
-        task = "verifying proxy due to general exception"
+        task = "verifying proxy due to a general exception"
         handle_failure_point_and_exit(location, task, e)
-        # print(e)
-        # print("In valid_proxy()")
         return False
