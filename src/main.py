@@ -55,7 +55,6 @@ def main() -> None:
     print_blue(f"Blacklisted: {len(isBlacklisted)}" if isBlacklisted is not None else "Blacklisted: Error Checking")
     print_blue(f"Clean: {len(isClean)}" if isClean is not None else "Clean: Error Checking")
     print_blue(f"Skipped: {len(wasSkipped)}" if wasSkipped is not None else "Was Skipped: Error Checking")
-    exit()
     
 
     
